@@ -7,13 +7,14 @@ readme         = "README.md"
 authors        = ["Xavier Gillard <xaviergillard@gmail.com>"]
 license        = "MIT"
 edition        = "2024"
-version        = "1.0.1"
+version        = "1.0.2"
    
 keywords       = [ "utf", "search" ]
 categories     = [ "development-tools" ]
 
 [dependencies]
 anyhow         = "1.0.98"
+arboard = "3.5.0"
 crossterm      = "0.29.0"
 ratatui        = "0.29.0"
 rayon          = "1.10.0"

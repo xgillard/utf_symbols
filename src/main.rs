@@ -6,7 +6,7 @@ mod tui;
 
 fn main() -> anyhow::Result<()>{
     let terminal = ratatui::init();
-    App::default().run(terminal)?;
+    App::new()?.run(terminal)?;
     ratatui::restore();
     Ok(())
 }

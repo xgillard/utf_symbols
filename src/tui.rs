@@ -1,20 +1,44 @@
 //! Terminal user interface for the project.
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
+use arboard::Clipboard;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent};
+use ratatui::layout::Flex;
+use ratatui::widgets::{Paragraph, TableState};
 use ratatui::{prelude::*, text::ToText, widgets::{Block, Row, Table}, DefaultTerminal};
 use tui_prompts::{State, TextPrompt, TextState};
 use crate::unicode::{lookup_by_name, CodePoint};
 
+const ABOUT: &'static str = "
+Press 'Down'  to select next item.
+Press 'up'    to select previous item.
+Press 'Enter' to copy selected item to clipboard (defaults to 1st).
+
+Press 'Esc'   to close this dialog.
+Press 'q'     to quit.
+
+20205 -- X. Gillard
+";
 
 /// The overall application state
-#[derive(Debug, Default)]
 pub struct App<'a> {
     search: TextState<'a>,
     results: Vec<CodePoint>,
+    popup: bool,
+    table_state: TableState,
+    clipboard: Clipboard,
 }
 
 impl App<'_> {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            search: TextState::default(),
+            results: vec![],
+            popup: false,
+            table_state: TableState::default(),
+            clipboard: Clipboard::new()?,
+        })
+    }
     pub fn run(&mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|f| self.render(f))?;
@@ -40,10 +64,20 @@ impl App<'_> {
             &self.results, vec![
                 Constraint::Length(3), 
                 Constraint::Fill(1),
-            ]);
+            ])
+            .block(Block::bordered())
+            .row_highlight_style(Style::new().on_blue());
         
         frame.render_stateful_widget(input, layout[0], &mut self.search);
-        frame.render_widget(table, layout[1]);
+        frame.render_stateful_widget(table, layout[1], &mut self.table_state);
+
+        if self.popup {
+            let popup = Paragraph::new(ABOUT)
+            .style(Style::new().on_blue());
+
+            let area = popup_area(frame.area(), 60, 50);
+            frame.render_widget(popup, area);
+        }
     }
 
     fn input(&mut self) -> Result<bool> {
@@ -51,7 +85,43 @@ impl App<'_> {
         match event {
             Event::Key(key_event) => 
                 match key_event {
-                    KeyEvent { code: KeyCode::Esc, .. } => Ok(true),
+                    KeyEvent { code: KeyCode::Esc, .. } => {
+                        if self.popup {
+                            self.popup = false;
+                            Ok(false)
+                        } else {
+                            self.popup = true;
+                            Ok(false)
+                        }
+                    }, 
+                    KeyEvent {code: KeyCode::Char('q'), ..} if self.popup => {
+                        Ok(true)
+                    },
+                    KeyEvent { code: KeyCode::Down, ..} => {
+                        if self.table_state.selected().is_none() {
+                            self.table_state.select_first();
+                        } else {
+                            self.table_state.select_next();
+                        }
+                        Ok(false)
+                    },
+                    KeyEvent { code: KeyCode::Up, ..} => {
+                        if self.table_state.selected().is_none() {
+                            self.table_state.select_last();
+                        } else {
+                            self.table_state.select_previous();
+                        }
+                        Ok(false)
+                    },
+                    KeyEvent {code: KeyCode::Enter, ..} => {
+                        if self.table_state.selected().is_none() {
+                            self.table_state.select_first();
+                        }
+                        let selected = self.table_state.selected().unwrap();
+                        let text = self.results[selected].0;
+                        self.clipboard.set_text(text.to_string())?;
+                        Ok(false)
+                    },
                     e => {
                         self.search.handle_key_event(e);
                         lookup_by_name(self.search.value(), &mut self.results);
@@ -63,6 +133,15 @@ impl App<'_> {
     }
 }
 
+
+/// helper function to create a centered rect using up certain percentage of the available rect `r`
+fn popup_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
+    let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
+    let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
+    let [area] = vertical.areas(area);
+    let [area] = horizontal.areas(area);
+    area
+}
 
 impl <'a> From<&'a CodePoint> for Row<'a> {
     fn from(value: &'a CodePoint) -> Self {
