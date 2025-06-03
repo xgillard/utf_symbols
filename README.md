@@ -1,9 +1,11 @@
-# UTF-SYMBOLD
+# UTF-SYMBOLS
 
 As it happens, I often use ideograms in my talks as I find them to be a good way to visually
 convey the intuition of what I mean. For that purpose, the UTF database is quite an incredible
 source since it comprises tons of ideograms that can be used reliably and for free. This is
 how this tool was born: a quick hack to search the few characters I wanted to find.
+
+![demo](./demo.gif)
 
 ## Build
 
@@ -29,4 +31,3 @@ Or, if you want to build it from sources:
 ``` 
 cargo install --path .
 ```
-
