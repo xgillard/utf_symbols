@@ -4,8 +4,8 @@ use rayon::prelude::*;
 use unicode_names2::name;
 
 /// Struct comprising the character and its name
-#[derive(Debug, Clone, Copy)]
-pub struct CodePoint(pub char, pub &'static str);
+#[derive(Debug, Clone)]
+pub struct CodePoint(pub char, pub String);
 
 /// Lookup utf characters based on their names
 pub fn lookup_by_name(s: &str, data: &mut Vec<CodePoint>) {
@@ -16,12 +16,9 @@ pub fn lookup_by_name(s: &str, data: &mut Vec<CodePoint>) {
         let chars = (' ' ..std::char::MAX).into_par_iter();
         let found = chars
             .filter_map(|c| {
-                if let Some(mut n) = name(c) {
-                    if let Some(n) = n.next() {
-                        Some(CodePoint(c, n))
-                    } else {
-                        None
-                    }
+                if let Some(n) = name(c) {
+                    let name = n.collect::<String>();
+                    Some(CodePoint(c, name))
                 } else {
                     None
                 }
