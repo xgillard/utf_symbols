@@ -4,20 +4,21 @@ use anyhow::{Ok, Result};
 use arboard::Clipboard;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent};
 use ratatui::layout::Flex;
-use ratatui::widgets::{Paragraph, TableState};
+use ratatui::widgets::{Clear, Paragraph, TableState};
 use ratatui::{prelude::*, text::ToText, widgets::{Block, Row, Table}, DefaultTerminal};
 use tui_prompts::{State, TextPrompt, TextState};
 use crate::unicode::{lookup_by_name, CodePoint};
 
 const ABOUT: &'static str = "
-Press 'Down'  to select next item.
-Press 'up'    to select previous item.
-Press 'Enter' to copy selected item to clipboard (defaults to 1st).
+    Press 'Down'  to select next item.
+    Press 'up'    to select previous item.
+    Press 'Enter' to copy selected item 
+                  to system clipboard.
 
-Press 'Esc'   to close this dialog.
-Press 'q'     to quit.
+    Press 'Esc'   to close this dialog.
+    Press 'q'     to quit.
 
-20205 -- X. Gillard
+    20205 -- X. Gillard
 ";
 
 /// The overall application state
@@ -72,11 +73,18 @@ impl App<'_> {
         frame.render_stateful_widget(table, layout[1], &mut self.table_state);
 
         if self.popup {
-            let popup = Paragraph::new(ABOUT)
-            .style(Style::new().on_blue());
+            let about = Block::bordered()
+                .title("About")
+                .style(Style::new().on_blue());
 
-            let area = popup_area(frame.area(), 60, 50);
-            frame.render_widget(popup, area);
+            let about_msg = Paragraph::new(ABOUT)
+                .style(Style::new().on_blue());
+
+            let area = popup_area(frame.area(), 75, 50);
+            let inner_area = about.inner(area);
+            frame.render_widget(Clear, area);
+            frame.render_widget(about, area);
+            frame.render_widget(about_msg, inner_area);
         }
     }
 

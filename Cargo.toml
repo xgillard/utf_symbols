@@ -7,7 +7,7 @@ readme         = "README.md"
 authors        = ["Xavier Gillard <xaviergillard@gmail.com>"]
 license        = "MIT"
 edition        = "2024"
-version        = "1.0.2"
+version        = "1.0.3"
    
 keywords       = [ "utf", "search" ]
 categories     = [ "development-tools" ]

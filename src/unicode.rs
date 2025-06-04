@@ -25,5 +25,6 @@ pub fn lookup_by_name(s: &str, data: &mut Vec<CodePoint>) {
             })
             .filter(|cp| cp.1.contains(canonical.as_str()));
         data.par_extend(found);
+        data.sort_unstable_by_key(|x| x.1.len());
     }
 }
